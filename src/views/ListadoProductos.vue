@@ -47,11 +47,6 @@ onMounted(async () => {
       id: doc.id,
       ...doc.data()
     }));
-    // Esto te va a decir en consola si los datos vienen del disco o de internet
-    const fuente = snapshot.metadata.fromCache ? "Caché Local" : "Servidor";
-    console.log("Datos cargados desde:", fuente);
-  }, (error) => {
-    console.error("Error en el snapshot:", error);
   });
 });
 
