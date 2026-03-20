@@ -1,20 +1,21 @@
 import { initializeApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAFEAkxJILrT1nDOT-Ci7cTsd4f-E3Wzac",
-  authDomain: "distrimaq-11f1d.firebaseapp.com",
-  projectId: "distrimaq-11f1d",
-  storageBucket: "distrimaq-11f1d.firebasestorage.app",
-  messagingSenderId: "968866211472",
-  appId: "1:968866211472:web:f6c6aa84e00d633c0e5a15"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
-
+const auth = getAuth(app);
 // Para que funcione sin internet, se puede usar el cache local persistente de Firestore
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 
-export { db };
+export { db, app, auth };
