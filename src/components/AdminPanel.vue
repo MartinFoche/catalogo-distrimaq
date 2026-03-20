@@ -21,7 +21,7 @@ const vistaActual = ref<'carga' | 'catalogo'>('catalogo');
 </script>
 
 <template>
-    <div class="app-container" style="background-color: white;">
+    <div class="contenedor-app" style="background-color: white;">
     <nav class="tabs">
       <button 
         :class="{ activo: vistaActual === 'catalogo' }" 
@@ -46,7 +46,7 @@ const vistaActual = ref<'carga' | 'catalogo'>('catalogo');
       </div>
     </nav>
 
-    <main class="contenido">
+    <main class="contenido-container">
       <CatalogoView v-if="vistaActual === 'catalogo'" />
       <CargaView v-else />
     </main>
@@ -55,8 +55,7 @@ const vistaActual = ref<'carga' | 'catalogo'>('catalogo');
 
 <style>
 /* Estilos globales para que se vea como App */
-body { margin: 0; background-color: #f4f7f6; font-family: sans-serif; }
-.app-container { max-width: 600px; margin: 0 auto; margin-top: 10px; margin-bottom: 10px; height: 100vh; border-radius: 15px; width: 95%; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
+.contenedor-app { max-width: 600px; margin: 0 auto; margin-top: 10px; height: 100vh; border-radius: 15px; width: 95%; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 
 .tabs {
   display: flex;
@@ -86,7 +85,7 @@ body { margin: 0; background-color: #f4f7f6; font-family: sans-serif; }
   border-bottom: 3px solid rgb(172, 3, 3);
 }
 
-.contenido { padding: 20px; }
+.contenido-container { padding: 20px; }
 
 .admin-header {
   display: flex;

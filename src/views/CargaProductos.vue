@@ -69,25 +69,25 @@ const guardarProducto = async () => {
     const archivoComprimido = await imageCompression(archivo.value, opciones)
     // 1. Subir la imagen a Cloudinary
     const urlLink = await uploadToCloudinary(archivoComprimido);
-    // Adentro de guardarProducto, antes del addDoc:
-    let valorOrden = Date.now(); // Por defecto al final
+    
+    let valorOrden = Date.now(); 
 
     if (modoOrden.value === 'principio') {
-      // Buscamos el orden más bajo de los productos que ya tenemos en pantalla
+      
       const minOrden = Math.min(...productosExistentes.value.map(p => p.orden || Date.now()));
       valorOrden = minOrden - 1; 
     } else if (modoOrden.value === 'despues' && productoReferenciaId.value) {
-      // Buscamos el producto que Jona eligió
+      
       const refProd = productosExistentes.value.find(p => p.id === productoReferenciaId.value);
       if (refProd) {
-        valorOrden = refProd.orden + 0.01; // Lo ponemos justo después
+        valorOrden = refProd.orden + 0.01; 
       }
     }
 
     if (categoria.value === 'Sin categoría') {
       categoria.value = '';
     }
-    // 2. Guardar los datos en la colección "productos" de Firebase
+    
     await addDoc(collection(db, "productos"), {
       nombre: nombre.value,
       categoria: categoria.value,
@@ -99,7 +99,6 @@ const guardarProducto = async () => {
 
     alert("¡Producto guardado con éxito!"); 
     
-    // Limpiar formulario para la siguiente carga
     nombre.value = '';
     marca.value = '';
     archivo.value = null;
@@ -116,18 +115,14 @@ const guardarProducto = async () => {
 };
 
 const categoriasOrdenadas = computed(() => {
-  // Primero ordenamos las del array (alfabéticamente)
   const ordenadas = [...categoriasDisponibles].sort((a, b) => a.localeCompare(b));
-  
-  // Retornamos un nuevo array que tiene 'Sin categoría' PRIMERO 
-  // y después el resto de las ordenadas
   return ['Sin categoría', ...ordenadas];
 });
 
 const seleccionarReferencia = (p: any) => {
   productoReferenciaId.value = p.id;
-  busquedaReferencia.value = p.nombre; // Para que vea qué eligió
-  mostrarResultados.value = false; // Cerramos la lista
+  busquedaReferencia.value = p.nombre; 
+  mostrarResultados.value = false;
 };
 </script>
 
@@ -303,6 +298,9 @@ input[type="text"], select {
 
 .buscador-container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .lista-resultados {

@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import Footer from './components/Footer.vue';
 import MyHeader from './components/Header.vue';
 import './style.css';
 </script>
 
 <template>
-  <MyHeader />
-  <router-view />
+  <div class="app-container">
+    <MyHeader />
+    <router-view class="contenido" />
+    <Footer />
+  </div>
+  
 </template>
 
 <style>
@@ -36,6 +41,14 @@ body { margin: 0; background-color: #f4f7f6; font-family: sans-serif; }
   border-bottom: 3px solid rgb(172, 3, 3);
 }
 
-.contenido { padding: 20px; }
+.contenido { 
+  flex: 1;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column; 
+  min-height: 100vh;      
+}
 
 </style>
