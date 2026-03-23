@@ -385,6 +385,8 @@ watch(busqueda, () => {
 .info {
   position: absolute;
   bottom: 0;
+  left: 0;
+  box-sizing: border-box;
   width: 100%;
   background: linear-gradient(transparent, rgba(0,0,0,0.7)); 
   padding: 40px 15px 15px; 
@@ -572,7 +574,8 @@ watch(busqueda, () => {
   margin-top: 15px;
   display: flex;
   flex-direction: column;
-  text-align: left;
+  align-items: center;
+  text-align: center;
 }
 
 .campo label {
