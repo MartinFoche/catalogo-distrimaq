@@ -3,6 +3,7 @@ import { onMounted, ref, computed, watch } from 'vue';
 import { query, onSnapshot, collection, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import EasyLightbox from 'vue-easy-lightbox'
+import { jsPDF } from "jspdf";
 
 interface Producto {
   id: string;
@@ -20,8 +21,76 @@ const scrollContainer = ref<HTMLElement | null>(null);
 const mostrarModal = ref(false);
 const productoAEditar = ref<any>(null);
 const visibleRef = ref(false)
-const indexRef = ref(0) // Para saber qué imagen mostrar
+const indexRef = ref(0) 
 const imgsRef = ref<string[]>([])
+
+
+const generarPDFVisual = async () => {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const lista = productos.value;
+
+  if (lista.length === 0) return alert("No hay productos para exportar");
+
+  for (let i = 0; i < lista.length; i++) {
+    const p = lista[i];
+
+    if (i > 0) doc.addPage();
+
+    try {
+      const img = new Image();
+      img.src = p.imagenUrl;
+      img.crossOrigin = "anonymous";
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+      const maxHeight = pageHeight - 70;
+      let imgWidth = img.width;
+      let imgHeight = img.height;
+      const ratio = imgWidth / imgHeight;
+
+      if (imgWidth > maxWidth) {
+        imgWidth = maxWidth;
+        imgHeight = imgWidth / ratio;
+      }
+      if (imgHeight > maxHeight) {
+        imgHeight = maxHeight;
+        imgWidth = imgHeight * ratio;
+      }
+
+      const x = (pageWidth - imgWidth) / 2;
+      const y = 20;
+
+      doc.addImage(img, 'JPEG', x, y, imgWidth, imgHeight);
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(200, 0, 0); // Un rojo para Distrimaq
+      doc.text(p.nombre.toUpperCase(), pageWidth / 2, y + imgHeight + 20, { align: 'center' });
+
+      if (p.marca) {
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(80, 80, 80);
+        doc.text(p.marca, pageWidth / 2, y + imgHeight + 32, { align: 'center' });
+      }
+
+    } catch (error) {
+      console.error("Error con imagen:", p.nombre);
+    }
+  }
+
+  const fechaActual = new Date();
+  const mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0'); 
+  const anio = fechaActual.getFullYear().toString(); 
+  const nombreArchivo = `Distrimaq ${mes}-${anio}.pdf`;
+  doc.save(nombreArchivo);
+};
 
 const showImg = (index: number) => {
   // Armamos la lista de imágenes para el zoom
@@ -49,17 +118,14 @@ const confirmarCambios = async () => {
 
     batch.update(docRef, {
       nombre: productoAEditar.value.nombre,
-      marca: productoAEditar.value.marca, // Si está vacío, mandamos string vacío
-      novedad: !!productoAEditar.value.novedad  // Forzamos a que sea true/false
+      marca: productoAEditar.value.marca, 
+      novedad: !!productoAEditar.value.novedad 
     });
 
     await batch.commit();
     
     mostrarModal.value = false;
-    // Puse un console.log en vez de alert para que no sea molesto, pero usá el que prefieras
-    console.log("¡Producto actualizado!");
   } catch (error) {
-    console.error("Error al guardar:", error);
     alert("Hubo un error al guardar.");
   }
 };
@@ -82,7 +148,6 @@ const handleWheel = (e: WheelEvent) => {
   const container = scrollContainer.value;
   if (!container) return;
 
-  // Si hay movimiento vertical en la rueda
   if (e.deltaY !== 0) {
     e.preventDefault(); 
     container.scrollBy({
@@ -122,10 +187,8 @@ onMounted(async () => {
 const productosFiltrados = computed(() => {
   const termino = busqueda.value.toLowerCase().trim();
   
-  // Si no hay nada escrito, mostramos todo
   if (!termino) return productos.value;
 
-  // Filtramos por nombre o por categoría
   return productos.value.filter(p => {
     return p.nombre.toLowerCase().includes(termino) || 
            p.categoria?.toLowerCase().includes(termino) ||
@@ -140,9 +203,12 @@ watch(busqueda, () => {
 </script>
 <template>
   <section class="listado">
-    <div>
+    <div class="gestionar-generar-container">
       <button @click="modoEdicion = !modoEdicion" :class="{ 'btn-edit-activo': modoEdicion }" class="btn-gestionar">
-        {{ modoEdicion ? '✅ Listo' : '⚙️ Gestionar' }}
+        {{ modoEdicion ? 'Listo' : 'Gestionar' }}
+      </button>
+      <button @click="generarPDFVisual" class="btn-pdf">
+        Generar PDF
       </button>
     </div>
     <div class="contenedor-busqueda">
@@ -407,9 +473,17 @@ watch(busqueda, () => {
   cursor: pointer;
 }
 
+.btn-gestionar:hover {
+  background: #f1f1f1;
+}
+
 .btn-edit-activo {
   background: #2ecc71;
   color: white;
+}
+
+.btn-edit-activo:hover {
+  background: #139248;
 }
 
 .botones-edicion{
@@ -595,5 +669,26 @@ watch(busqueda, () => {
   100% { 
     transform: translateX(-50%) scale(1); 
   }
+}
+
+.gestionar-generar-container{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.btn-pdf{
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-pdf:hover {
+  background: #f1f1f1;
 }
 </style>
