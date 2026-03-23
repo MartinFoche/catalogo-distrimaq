@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
@@ -9,14 +9,10 @@ const nombre = ref('');
 const categoria = ref('Sin categoría');
 const archivo = ref<File | null>(null);
 const marca = ref('');
+const novedad = ref(false);
 const cargando = ref(false);
-const modoOrden = ref('final'); 
-const productoReferenciaId = ref(''); 
 const productosExistentes = ref<any[]>([]);
-const busquedaReferencia = ref(''); 
-const mostrarResultados = ref(false);
-
-const categoriasDisponibles: string[] = ['Alfajores','Turrones','Medicamentos','Pastillas','Barritas', 'Galletitas', 'Chocolates','Gomitas','Malvaviscos', 'Caramelos','Chupetines'];
+const categoriasDisponibles: string[] = ['Alfajores','Turrones','Medicamentos','Pastillas','Barritas', 'Galletitas', 'Chocolates','Snacks','Gomitas','Malvaviscos', 'Caramelos','Chupetines'];
 
 const seleccionarArchivo = (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -26,7 +22,7 @@ const seleccionarArchivo = (e: Event) => {
 };
 
 onMounted(async () => {
-  const q = query(collection(db, "productos"), orderBy("orden", "asc"));
+  const q = query(collection(db, "productos"), orderBy("marca", "asc"), orderBy("nombre", "asc"));
   
   onSnapshot(q, (snapshot) => {
     productosExistentes.value = snapshot.docs.map(doc => ({
@@ -36,22 +32,10 @@ onMounted(async () => {
   });
 });
 
-const productosFiltrados = computed(() => {
-  if (!busquedaReferencia.value) return productosExistentes.value;
-  return productosExistentes.value.filter(p => 
-    p.nombre.toLowerCase().includes(busquedaReferencia.value.toLowerCase())
-  );
-});
-
-watch(busquedaReferencia, (nuevoValor) => {
-  if (nuevoValor === '') {
-    productoReferenciaId.value = '';
-  }
-});
-
 const guardarProducto = async () => {
-  if (!nombre.value) return alert("Poné un nombre para el producto");
-  if (!archivo.value) return alert("Tenés que elegir una imagen");
+  if (!nombre.value) return alert("Se debe poner un nombre para el producto");
+  if (!marca.value) return alert("Se debe poner una marca para el producto");
+  if (!archivo.value) return alert("Se debe poner elegir una imagen");
   cargando.value = true;
 
   try {
@@ -60,29 +44,13 @@ const guardarProducto = async () => {
       maxWidthOrHeight: 1200, 
       useWebWorker: true
     };
-    if (modoOrden.value === 'despues' && !productoReferenciaId.value) {
-      alert("Por favor, seleccioná un producto de la lista para usar como referencia.");
-      cargando.value = false;
-      return;
-    }
+
     // Comprimimos el archivo que está en archivo.value
     const archivoComprimido = await imageCompression(archivo.value, opciones)
     // 1. Subir la imagen a Cloudinary
     const urlLink = await uploadToCloudinary(archivoComprimido);
     
     let valorOrden = Date.now(); 
-
-    if (modoOrden.value === 'principio') {
-      
-      const minOrden = Math.min(...productosExistentes.value.map(p => p.orden || Date.now()));
-      valorOrden = minOrden - 1; 
-    } else if (modoOrden.value === 'despues' && productoReferenciaId.value) {
-      
-      const refProd = productosExistentes.value.find(p => p.id === productoReferenciaId.value);
-      if (refProd) {
-        valorOrden = refProd.orden + 0.01; 
-      }
-    }
 
     if (categoria.value === 'Sin categoría') {
       categoria.value = '';
@@ -94,7 +62,8 @@ const guardarProducto = async () => {
       marca: marca.value,
       imagenUrl: urlLink,
       orden: valorOrden, 
-      fechaCarga: serverTimestamp()
+      fechaCarga: serverTimestamp(),
+      novedad: novedad.value
     });
 
     alert("¡Producto guardado con éxito!"); 
@@ -119,11 +88,6 @@ const categoriasOrdenadas = computed(() => {
   return ['Sin categoría', ...ordenadas];
 });
 
-const seleccionarReferencia = (p: any) => {
-  productoReferenciaId.value = p.id;
-  busquedaReferencia.value = p.nombre; 
-  mostrarResultados.value = false;
-};
 </script>
 
 <template>
@@ -156,7 +120,6 @@ const seleccionarReferencia = (p: any) => {
         />
       </div>
 
-
       <div class="campo">
         <label>Foto del Producto</label>
         <div class="upload-area">
@@ -168,35 +131,15 @@ const seleccionarReferencia = (p: any) => {
         </div>
       </div>
 
-      <div class="campo">
-        <label>¿Dónde ubicarlo?</label>
-        <select v-model="modoOrden">
-          <option value="final">Al final de todo</option>
-          <option value="principio">Al principio de todo</option>
-          <option value="despues">Después de un producto...</option>
-        </select>
-      </div>
-
-      <div class="campo" v-if="modoOrden === 'despues'">
-        <label>Elegí el producto de referencia</label>
-        <div class="buscador-container">
+      <div class="campo-checkbox ">
+        <label>
+          Es Novedad?
+        </label>
           <input 
-            v-model="busquedaReferencia" 
-            type="text" 
-            placeholder="Escribí el nombre..." 
-            @focus="mostrarResultados = true"
+            type="checkbox" 
+            v-model="novedad" 
           />
-          
-          <ul v-if="mostrarResultados && productosFiltrados.length > 0" class="lista-resultados">
-            <li 
-              v-for="p in productosFiltrados" 
-              :key="p.id" 
-              @click="seleccionarReferencia(p)"
-            >
-              {{ p.nombre }}
-            </li>
-          </ul>
-        </div>
+
       </div>
 
       <button 
@@ -328,5 +271,23 @@ input[type="text"], select {
 
 .lista-resultados li:hover {
   background-color: #f1f1f1;
+}
+
+.campo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.campo-checkbox input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.campo-checkbox label {
+  font-weight: bold;
+  color: #2c3e50;
 }
 </style>

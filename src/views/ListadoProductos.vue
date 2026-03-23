@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue'; 
-import { query, orderBy, onSnapshot, collection, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { query, onSnapshot, collection, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import EasyLightbox from 'vue-easy-lightbox'
 
-const productos = ref<any[]>([]);
+interface Producto {
+  id: string;
+  nombre: string;
+  marca: string;    
+  categoria?: string;
+  imagenUrl: string;
+  novedad?: boolean;
+}
+
+const productos = ref<Producto[]>([]);
 const busqueda = ref('');
 const modoEdicion = ref(false);
 const scrollContainer = ref<HTMLElement | null>(null);
@@ -24,7 +33,6 @@ const showImg = (index: number) => {
 const onHide = () => (visibleRef.value = false)
 // Variables para la "nueva" posición
 const nuevaUbicacion = ref('Sin cambiar'); 
-const productoReferenciaId = ref('');
 
 const abrirEdicion = (prod: any) => {
   productoAEditar.value = { ...prod };
@@ -37,50 +45,21 @@ const confirmarCambios = async () => {
 
   try {
     const batch = writeBatch(db);
-    let nuevoOrden = productoAEditar.value.orden;
-
-    if (nuevaUbicacion.value !== 'Sin cambiar') {
-      const todosLosProductos = [...productos.value].sort((a, b) => a.orden - b.orden);
-
-      if (nuevaUbicacion.value === 'principio') {
-        // Buscamos el menor orden actual y le restamos 1
-        const minOrden = todosLosProductos.length > 0 ? todosLosProductos[0].orden : 0;
-        nuevoOrden = minOrden - 1;
-      } 
-      else if (nuevaUbicacion.value === 'final') {
-        // Buscamos el mayor orden actual y le sumamos 1
-        const maxOrden = todosLosProductos.length > 0 ? todosLosProductos[todosLosProductos.length - 1].orden : 0;
-        nuevoOrden = maxOrden + 1;
-      } 
-      else if (nuevaUbicacion.value === 'despues') {
-        // Buscamos el producto de referencia
-        const refProd = productos.value.find(p => p.id === productoReferenciaId.value);
-        if (refProd) {
-          nuevoOrden = refProd.orden + 1;
-          // Empujamos a todos los que tengan orden >= nuevoOrden
-          const productosAMover = productos.value.filter(p => p.orden >= nuevoOrden && p.id !== productoAEditar.value.id);
-          productosAMover.forEach(p => {
-            const pRef = doc(db, "productos", p.id);
-            batch.update(pRef, { orden: p.orden + 1 });
-          });
-        }
-      }
-    }
-
-    // Actualizamos el producto que estamos editando
     const docRef = doc(db, "productos", productoAEditar.value.id);
+
     batch.update(docRef, {
       nombre: productoAEditar.value.nombre,
-      orden: nuevoOrden
+      marca: productoAEditar.value.marca, // Si está vacío, mandamos string vacío
+      novedad: !!productoAEditar.value.novedad  // Forzamos a que sea true/false
     });
 
-    // Ejecutamos todos los cambios juntos
     await batch.commit();
     
     mostrarModal.value = false;
-    alert("¡Producto actualizado correctamente!");
+    // Puse un console.log en vez de alert para que no sea molesto, pero usá el que prefieras
+    console.log("¡Producto actualizado!");
   } catch (error) {
-    console.error("Error al guardar cambios:", error);
+    console.error("Error al guardar:", error);
     alert("Hubo un error al guardar.");
   }
 };
@@ -113,18 +92,33 @@ const handleWheel = (e: WheelEvent) => {
   }
 };
 
-// Esta función se trae los datos y "se queda escuchando"
+
 onMounted(async () => {
-  const q = query(collection(db, "productos"), orderBy("orden", "asc"));
+  const q = query(collection(db, "productos"));
   
   onSnapshot(q, (snapshot) => {
-    productos.value = snapshot.docs.map(doc => ({
+    const rawData = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })) as Producto[];;
+
+    productos.value = rawData.sort((a, b) => {
+      if (a.novedad !== b.novedad) {
+        return a.novedad ? -1 : 1;
+      }
+
+      const marcaA = (a.marca || "").toLowerCase();
+      const marcaB = (b.marca || "").toLowerCase();
+      if (marcaA !== marcaB) {
+        return marcaA.localeCompare(marcaB);
+      }
+
+      const nombreA = (a.nombre || "").toLowerCase();
+      const nombreB = (b.nombre || "").toLowerCase();
+      return nombreA.localeCompare(nombreB);
+    });
   });
 });
-
 const productosFiltrados = computed(() => {
   const termino = busqueda.value.toLowerCase().trim();
   
@@ -134,7 +128,7 @@ const productosFiltrados = computed(() => {
   // Filtramos por nombre o por categoría
   return productos.value.filter(p => {
     return p.nombre.toLowerCase().includes(termino) || 
-           p.categoria.toLowerCase().includes(termino) ||
+           p.categoria?.toLowerCase().includes(termino) ||
            (p.marca && p.marca.toLowerCase().includes(termino));
   });
 });
@@ -176,9 +170,12 @@ watch(busqueda, () => {
     >
       <div v-for="prod in productosFiltrados" :key="prod.id" class="card-producto" :class="{ 'modo-edicion-vibrar': modoEdicion }">
         <div class="contenedor-img">
+          <div v-if="prod.novedad" class="badge-novedad">
+            NUEVO
+          </div>
           <img :src="prod.imagenUrl" alt="Foto" loading="lazy" draggable="false" @click="showImg(productosFiltrados.indexOf(prod))" style="cursor: zoom-in;"/>
-          <span v-if="prod.categoria !== 'Sin categoría'" class="tag">{{ prod.categoria }}</span>
-          <span v-if="prod.marca" class="tag" style="top: 50px; background: #2ecc71;">{{ prod.marca }}</span>
+          <span v-if="prod.marca" class="tag" style="background: #2ecc71;">{{ prod.marca }}</span>
+          <span v-if="prod.categoria !== ''" style="top: 50px;" class="tag">{{ prod.categoria }}</span>
           <div class="botones-edicion">
             <button 
               v-if="modoEdicion" 
@@ -212,27 +209,19 @@ watch(busqueda, () => {
         <label>Nombre:</label>
         <input v-model="productoAEditar.nombre" type="text" />
       </div>
-
       <div class="campo">
-        <label>¿Mover a otra posición?</label>
-        <select v-model="nuevaUbicacion">
-          <option value="Sin cambiar">Mantener donde está</option>
-          <option value="principio">Al principio de todo</option>
-          <option value="final">Al final de todo</option>
-          <option value="despues">Después de otro producto...</option>
-        </select>
+        <label>Marca:</label>
+        <input v-model="productoAEditar.marca" type="text" placeholder="Ej: Guaymallen" />
       </div>
 
-      <div v-if="nuevaUbicacion === 'despues'" class="campo">
-        <label>¿Después de cuál?</label>
-        <select v-model="productoReferenciaId">
-          <option v-for="p in productos.filter(x => x.id !== productoAEditar.id)" 
-                  :key="p.id" :value="p.id">
-            {{ p.nombre }}
-          </option>
-        </select>
+      <div class="campo-checkbox">
+        <label for="checkNovedad">Es novedad</label>
+        <input 
+          type="checkbox" 
+          id="checkNovedad" 
+          v-model="productoAEditar.novedad" 
+        />
       </div>
-
       <div class="botones-modal">
         <button @click="mostrarModal = false" class="btn-cancelar">Cerrar</button>
         <button @click="confirmarCambios" class="btn-guardar">Actualizar Producto</button>
@@ -560,5 +549,51 @@ watch(busqueda, () => {
 }
 .btn-cancelar:hover {
   background: #d1d1d1;
+}
+.campo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.campo-checkbox input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.campo-checkbox label {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.badge-novedad {
+  position: absolute;
+  top: 15px;   
+  left: 50%;     
+  transform: translateX(-50%); 
+  background: #ff0000;
+  color: #ffffff;
+  padding: 4px 15px;
+  border-radius: 50px;
+  font-weight: 900;
+  font-size: 0.75rem;
+  z-index: 20;    
+  white-space: nowrap; 
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  animation: pulsoNovedad 2s infinite;
+}
+
+@keyframes pulsoNovedad {
+  0% { 
+    transform: translateX(-50%) scale(1); 
+  }
+  50% { 
+    transform: translateX(-50%) scale(1.1); 
+  }
+  100% { 
+    transform: translateX(-50%) scale(1); 
+  }
 }
 </style>
