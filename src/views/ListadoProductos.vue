@@ -212,7 +212,7 @@ watch(busqueda, () => {
       <button v-if="user" @click="modoEdicion = !modoEdicion" :class="{ 'btn-edit-activo': modoEdicion }" class="btn-gestionar">
         {{ modoEdicion ? 'Listo' : 'Gestionar' }}
       </button>
-      <button @click="generarPDFVisual" class="btn-pdf">
+      <button v-if="false" @click="generarPDFVisual" class="btn-pdf">
         Generar PDF
       </button>
     </div>
