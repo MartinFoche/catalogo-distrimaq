@@ -21,7 +21,11 @@ const router = createRouter({
     },
     { 
       path: '/', 
-      component: () => import('../components/AdminPanel.vue'), // Tu sistema de tabs
+      component: () => import('../components/AdminPanel.vue')
+    },
+    { 
+      path: '/admin', 
+      component: () => import('../components/AdminPanel.vue'),
       meta: { requiresAuth: true } 
     }
   ]

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue'; 
 import { query, onSnapshot, collection, doc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { db } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth'
+import { db, auth } from '../firebase';
 import EasyLightbox from 'vue-easy-lightbox'
 import { jsPDF } from "jspdf";
+import type { User } from 'firebase/auth';
 
 interface Producto {
   id: string;
@@ -23,7 +25,7 @@ const productoAEditar = ref<any>(null);
 const visibleRef = ref(false)
 const indexRef = ref(0) 
 const imgsRef = ref<string[]>([])
-
+const user = ref<User | null>(null)
 
 const generarPDFVisual = async () => {
   const doc = new jsPDF('p', 'mm', 'a4');
@@ -159,6 +161,9 @@ const handleWheel = (e: WheelEvent) => {
 
 
 onMounted(async () => {
+  onAuthStateChanged(auth, (u) => {
+    user.value = u
+  })
   const q = query(collection(db, "productos"));
   
   onSnapshot(q, (snapshot) => {
@@ -204,7 +209,7 @@ watch(busqueda, () => {
 <template>
   <section class="listado">
     <div class="gestionar-generar-container">
-      <button @click="modoEdicion = !modoEdicion" :class="{ 'btn-edit-activo': modoEdicion }" class="btn-gestionar">
+      <button v-if="user" @click="modoEdicion = !modoEdicion" :class="{ 'btn-edit-activo': modoEdicion }" class="btn-gestionar">
         {{ modoEdicion ? 'Listo' : 'Gestionar' }}
       </button>
       <button @click="generarPDFVisual" class="btn-pdf">

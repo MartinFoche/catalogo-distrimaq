@@ -1,13 +1,16 @@
 <script setup lang="ts">
 </script>
 <template>
-    <header class="header">
+    <header class="header" to="/">
         <div class="logo-container">
-            <img
+            <router-link to="/">
+                <img
                 class="img-header"
                 src="/images/logo-distrimaq.png"
                 alt="Distrimaq"
             />
+            </router-link>
+            
         </div>
     </header>
 </template>

@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import CargaView from '../views/CargaProductos.vue';
 import CatalogoView from '../views/ListadoProductos.vue';
 import '../style.css';
 import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router'
-const router = useRouter();
+import type { User } from 'firebase/auth';
 
+const router = useRouter();
+const user = ref<User | null>(null)
 const cerrarSesion = async () => {
   try {
     await signOut(auth);
@@ -18,6 +20,12 @@ const cerrarSesion = async () => {
 };
 
 const vistaActual = ref<'carga' | 'catalogo'>('catalogo');
+
+onMounted(async () => {
+  onAuthStateChanged(auth, (u) => {
+    user.value = u
+  })
+})
 </script>
 
 <template>
@@ -30,18 +38,27 @@ const vistaActual = ref<'carga' | 'catalogo'>('catalogo');
         📖 Ver Catálogo
       </button>
       <button 
+        v-if="user"
         :class="{ activo: vistaActual === 'carga' }" 
         @click="vistaActual = 'carga'"
       >
         ➕ Cargar Nueva
       </button>
       <div class="separador-salir">
-        <button @click="cerrarSesion" class="btn-salir">
+        <button v-if="user" @click="cerrarSesion" class="btn-salir">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
             <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
+          </svg>
+        </button>
+        <button v-if="!user" @click="$router.push('/login')" class="btn-login">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- cabeza -->
+            <circle cx="12" cy="8" r="4"></circle>
+            <!-- cuerpo -->
+            <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path>
+          </svg>
         </button>
       </div>
     </nav>
