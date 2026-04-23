@@ -173,18 +173,21 @@ onMounted(async () => {
     })) as Producto[];;
 
     productos.value = rawData.sort((a, b) => {
-      if (a.novedad !== b.novedad) {
-        return a.novedad ? -1 : 1;
+      const novA = !!a.novedad;
+      const novB = !!b.novedad;
+
+      if (novA !== novB) {
+        return novA ? -1 : 1;
       }
 
-      const marcaA = (a.marca || "").toLowerCase();
-      const marcaB = (b.marca || "").toLowerCase();
+      const marcaA = (a.marca || "").trim().toLowerCase();
+      const marcaB = (b.marca || "").trim().toLowerCase();
       if (marcaA !== marcaB) {
         return marcaA.localeCompare(marcaB);
       }
 
-      const nombreA = (a.nombre || "").toLowerCase();
-      const nombreB = (b.nombre || "").toLowerCase();
+      const nombreA = (a.nombre || "").trim().toLowerCase();
+      const nombreB = (b.nombre || "").trim().toLowerCase();
       return nombreA.localeCompare(nombreB);
     });
   });
