@@ -244,12 +244,16 @@ watch(busqueda, () => {
     >
       <div v-for="prod in productosFiltrados" :key="prod.id" class="card-producto" :class="{ 'modo-edicion-vibrar': modoEdicion }">
         <div class="contenedor-img">
-          <div v-if="prod.novedad" class="badge-novedad">
-            NUEVO
-          </div>
+          
           <img :src="prod.imagenUrl" alt="Foto" loading="lazy" draggable="false" @click="showImg(productosFiltrados.indexOf(prod))" style="cursor: zoom-in;"/>
-          <span v-if="prod.marca" class="tag" style="background: #2ecc71;">{{ prod.marca }}</span>
-          <span v-if="prod.categoria !== ''" style="top: 50px;" class="tag">{{ prod.categoria }}</span>
+          <div class="tags-container">
+            <span v-if="prod.marca" class="tag">{{ prod.marca }}</span>
+            <div v-if="prod.novedad" class="badge-novedad">
+              NUEVO
+            </div>
+            <span v-if="prod.categoria !== ''" style="top: 50px;" class="tag">{{ prod.categoria }}</span>
+          </div>
+          
           <div class="botones-edicion">
             <button 
               v-if="modoEdicion" 
@@ -372,13 +376,6 @@ watch(busqueda, () => {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom, 
-    rgba(0,0,0,0.3) 0%, 
-    transparent 20%, 
-    transparent 80%, 
-    rgba(0,0,0,0.4) 100%
-  );
   pointer-events: none;
 }
 
@@ -396,7 +393,7 @@ watch(busqueda, () => {
   left: 0;
   box-sizing: border-box;
   width: 100%;
-  background: linear-gradient(transparent, rgba(0,0,0,0.7)); 
+  background: linear-gradient(transparent, rgb(172, 3, 3)); 
   padding: 40px 15px 15px; 
   text-align: center;
 }
@@ -460,13 +457,10 @@ watch(busqueda, () => {
   margin-left: 5px;
 }
 .tag {
-  position: absolute;
-  top: 15px;
-  left: 15px; 
-  background: #3498db;
+  background: rgb(73, 73, 73);
   color: white;
   font-size: 0.7rem;
-  padding: 4px 10px;
+  padding: 6px 8px;
   border-radius: 20px;
   text-transform: uppercase;
   font-weight: bold;
@@ -581,7 +575,6 @@ watch(busqueda, () => {
 .campo {
   margin-top: 15px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   text-align: center;
 }
@@ -653,18 +646,13 @@ watch(busqueda, () => {
   color: #2c3e50;
 }
 
-.badge-novedad {
-  position: absolute;
-  top: 15px;   
-  left: 50%;     
-  transform: translateX(-50%); 
+.badge-novedad {  
   background: #ff0000;
   color: #ffffff;
   padding: 4px 15px;
   border-radius: 50px;
   font-weight: 900;
   font-size: 0.75rem;
-  z-index: 20;    
   white-space: nowrap; 
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
   animation: pulsoNovedad 2s infinite;
@@ -672,13 +660,13 @@ watch(busqueda, () => {
 
 @keyframes pulsoNovedad {
   0% { 
-    transform: translateX(-50%) scale(1); 
+    transform: scale(1); 
   }
   50% { 
-    transform: translateX(-50%) scale(1.1); 
+    transform: scale(1.1); 
   }
   100% { 
-    transform: translateX(-50%) scale(1); 
+    transform: scale(1); 
   }
 }
 
@@ -701,5 +689,15 @@ watch(busqueda, () => {
 
 .btn-pdf:hover {
   background: #f1f1f1;
+}
+
+.tags-container {
+  width: 90%;
+  position: absolute;
+  display: flex;
+  justify-content: space-between;
+  top: 15px;
+  gap: 5px;
+  z-index: 5;
 }
 </style>
