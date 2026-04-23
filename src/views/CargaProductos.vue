@@ -12,7 +12,7 @@ const marca = ref('');
 const novedad = ref(false);
 const cargando = ref(false);
 const productosExistentes = ref<any[]>([]);
-const categoriasDisponibles: string[] = ['Alfajores','Chicles','Turrones','Medicamentos','Pastillas','Barritas', 'Galletitas', 'Chocolates','Snacks','Gomitas','Malvaviscos', 'Caramelos','Chupetines'];
+const categoriasDisponibles: string[] = ['Alfajores','Chicles','Turrones','Pilas','Pastillas','Varios','Barritas', 'Galletitas', 'Chocolates','Snacks','Gomitas','Malvaviscos', 'Caramelos','Chupetines'];
 
 const seleccionarArchivo = (e: Event) => {
   const target = e.target as HTMLInputElement;
