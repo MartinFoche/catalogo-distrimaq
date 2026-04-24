@@ -675,7 +675,8 @@ watch(busqueda, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
+  margin-top: 5px;
 }
 
 .btn-pdf{
