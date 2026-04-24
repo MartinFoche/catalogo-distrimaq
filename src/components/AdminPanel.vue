@@ -102,7 +102,7 @@ onMounted(async () => {
   border-bottom: 3px solid rgb(172, 3, 3);
 }
 
-.contenido-container { padding: 20px; }
+.contenido-container { padding: 5px; }
 
 .admin-header {
   display: flex;

@@ -325,7 +325,7 @@ watch(busqueda, () => {
 
 .scroll-horizontal {
   display: grid;
-  grid-template-rows: 600px; 
+  grid-template-rows: 500px; 
   grid-auto-flow: column;
   grid-auto-columns: 100%; 
   gap: 0; 
@@ -368,6 +368,7 @@ watch(busqueda, () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: auto;
   padding: 10px; 
   box-sizing: border-box;
 }
@@ -381,7 +382,7 @@ watch(busqueda, () => {
 
 .contenedor-img img {
   width: 100%;
-  height: 100%;
+  height: 85%;
   object-fit: contain; 
   border-radius: 8px;
   pointer-events: none;
